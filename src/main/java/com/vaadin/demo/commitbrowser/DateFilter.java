@@ -3,8 +3,8 @@ package com.vaadin.demo.commitbrowser;
 import java.util.Calendar;
 import java.util.Date;
 
-import com.vaadin.data.Container.Filter;
-import com.vaadin.data.Item;
+import com.vaadin.v7.data.Container.Filter;
+import com.vaadin.v7.data.Item;
 
 final class DateFilter implements Filter {
     private Date comparisonDate;
