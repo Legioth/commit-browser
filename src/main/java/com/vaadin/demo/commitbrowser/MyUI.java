@@ -15,12 +15,14 @@ import com.vaadin.cdi.CDIUI;
 import com.vaadin.event.ShortcutAction.KeyCode;
 import com.vaadin.event.ShortcutListener;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.shared.ui.ValueChangeMode;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
@@ -37,7 +39,6 @@ import com.vaadin.v7.ui.Grid.HeaderCell;
 import com.vaadin.v7.ui.Grid.HeaderRow;
 import com.vaadin.v7.ui.Grid.RowReference;
 import com.vaadin.v7.ui.NativeSelect;
-import com.vaadin.v7.ui.TextField;
 import com.vaadin.v7.ui.renderers.HtmlRenderer;
 import com.vaadin.v7.ui.renderers.ProgressBarRenderer;
 
@@ -156,9 +157,10 @@ public class MyUI extends UI {
                 TextField filterField = new TextField();
                 filterField.setWidth(100, Unit.PERCENTAGE);
                 filterField.addStyleName(ValoTheme.TEXTFIELD_SMALL);
+                filterField.setValueChangeMode(ValueChangeMode.LAZY);
 
                 // Update filter When the filter input is changed
-                filterField.addTextChangeListener(change -> {
+                filterField.addValueChangeListener(change -> {
                     // Can't modify filters so need to replace
                     System.err.println("Got text change event");
                     container.removeContainerFilters(pid);
@@ -167,9 +169,9 @@ public class MyUI extends UI {
                     boolean onlyMatchPrefix = false;
 
                     // (Re)create the filter if necessary
-                    if (!change.getText().isEmpty()) {
+                    if (!change.getValue().isEmpty()) {
                         System.err.println("Adding filter");
-                        container.addContainerFilter(pid, change.getText(),
+                        container.addContainerFilter(pid, change.getValue(),
                                 ignoreCase, onlyMatchPrefix);
                     }
                 });
