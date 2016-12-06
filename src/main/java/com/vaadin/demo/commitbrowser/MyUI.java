@@ -3,44 +3,39 @@ package com.vaadin.demo.commitbrowser;
 import java.text.DateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 import javax.inject.Inject;
-
-import org.vaadin.viritin.LazyList;
 
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.Widgetset;
 import com.vaadin.cdi.CDIUI;
-import com.vaadin.event.ShortcutAction.KeyCode;
-import com.vaadin.event.ShortcutListener;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.data.DataProvider;
+import com.vaadin.server.data.ListDataProvider;
 import com.vaadin.shared.ui.ValueChangeMode;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.DateField;
 import com.vaadin.ui.FormLayout;
+import com.vaadin.ui.Grid;
+import com.vaadin.ui.Grid.DetailsGenerator;
+import com.vaadin.ui.Grid.HeaderCell;
+import com.vaadin.ui.Grid.HeaderRow;
+import com.vaadin.ui.Grid.ItemClick;
+import com.vaadin.ui.Grid.ItemClickListener;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.NativeSelect;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.renderers.HtmlRenderer;
+import com.vaadin.ui.renderers.ProgressBarRenderer;
 import com.vaadin.ui.themes.ValoTheme;
-import com.vaadin.v7.data.util.BeanItemContainer;
-import com.vaadin.v7.event.ItemClickEvent;
-import com.vaadin.v7.event.SelectionEvent;
-import com.vaadin.v7.ui.Grid;
-import com.vaadin.v7.ui.Grid.Column;
-import com.vaadin.v7.ui.Grid.DetailsGenerator;
-import com.vaadin.v7.ui.Grid.HeaderCell;
-import com.vaadin.v7.ui.Grid.HeaderRow;
-import com.vaadin.v7.ui.Grid.RowReference;
-import com.vaadin.v7.ui.renderers.HtmlRenderer;
-import com.vaadin.v7.ui.renderers.ProgressBarRenderer;
 
 import elemental.json.JsonValue;
 
@@ -54,7 +49,7 @@ public class MyUI extends UI {
 
     @Inject
     GitRepositoryService gitRepositoryService;
-    private Grid grid = new Grid();
+    private Grid<Commit> grid = new Grid<>();
 
     private static LinkedHashMap<String, String> themeVariants = new LinkedHashMap<String, String>();
 
@@ -94,37 +89,28 @@ public class MyUI extends UI {
             layout.addComponent(themeSelector);
             layout.setComponentAlignment(themeSelector, Alignment.TOP_RIGHT);
         }
-        LazyList<Commit> lazyList = new LazyList<>(
-                firstRow -> gitRepositoryService.find(firstRow,
-                        LazyList.DEFAULT_PAGE_SIZE),
-                gitRepositoryService::count);
 
-        BeanItemContainer<Commit> container = new BeanItemContainer<Commit>(
-                Commit.class, lazyList);
+        ListDataProvider<Commit> dataProvider = DataProvider
+                .create(gitRepositoryService.findAll());
 
-        grid.setContainerDataSource(container);
+        grid.setDataProvider(dataProvider);
 
-        List<Column> columns = grid.getColumns();
+        grid.addColumn(Commit::getFullName, new MinimalSizeHtmlRenderer())
+                .setCaption("Full Name").setExpandRatio(1);
+        grid.addColumn(Commit::getFullTopic, new MinimalSizeHtmlRenderer())
+                .setCaption("Full Topic").setExpandRatio(2);
 
-        // print out column names for debugging purposes
-        for (Column c : columns) {
-            System.out.println("c.getPropertyId() = " + c.getPropertyId());
-        }
+        grid.addColumn(Commit::getSize, new ProgressBarRenderer())
+                .setCaption("Size");
 
-        grid.setColumns("fullName", "fullTopic", "size", "timestamp");
+        grid.addColumn(commit -> String.valueOf(commit.getTimestamp()))
+                .setCaption("Timestamp");
 
-        grid.getColumn("fullName").setExpandRatio(1);
-        grid.getColumn("fullName").setRenderer(new MinimalSizeHtmlRenderer());
         // grid.getColumn("fullName").setWidth(185);
 
-        grid.getColumn("fullTopic").setExpandRatio(2);
-        grid.getColumn("fullTopic").setRenderer(new MinimalSizeHtmlRenderer());
         // grid.getColumn("fullTopic").setWidth(372);
         // Allow column hiding for all columns
         grid.getColumns().forEach(column -> column.setHidable(true));
-
-        // render size as progressbar
-        grid.getColumn("size").setRenderer(new ProgressBarRenderer());
 
         // Allow column reordering
         grid.setColumnReorderingAllowed(true);
@@ -138,8 +124,7 @@ public class MyUI extends UI {
         startFilter = new DateFilter(null, true);
         endFilter = new DateFilter(null, false);
 
-        for (Object pid : grid.getContainerDataSource()
-                .getContainerPropertyIds()) {
+        for (String pid : Collections.<String> emptyList()) {
 
             // if we are not in one of the tree columns, move on
             if (!(pid.equals("fullName") || pid.equals("fullTopic")
@@ -163,7 +148,7 @@ public class MyUI extends UI {
                 filterField.addValueChangeListener(change -> {
                     // Can't modify filters so need to replace
                     System.err.println("Got text change event");
-                    container.removeContainerFilters(pid);
+                    // container.removeContainerFilters(pid);
 
                     boolean ignoreCase = true;
                     boolean onlyMatchPrefix = false;
@@ -171,8 +156,8 @@ public class MyUI extends UI {
                     // (Re)create the filter if necessary
                     if (!change.getValue().isEmpty()) {
                         System.err.println("Adding filter");
-                        container.addContainerFilter(pid, change.getValue(),
-                                ignoreCase, onlyMatchPrefix);
+                        // container.addContainerFilter(pid, change.getValue(),
+                        // ignoreCase, onlyMatchPrefix);
                     }
                 });
                 cell.setComponent(filterField);
@@ -204,18 +189,18 @@ public class MyUI extends UI {
                     Date start = localDateToDate(event.getValue());
                     // remove filter
                     startFilter = new DateFilter(start, true);
-                    container.removeContainerFilters("timestamp");
-                    container.addContainerFilter(startFilter);
-                    container.addContainerFilter(endFilter);
+                    // container.removeContainerFilters("timestamp");
+                    // container.addContainerFilter(startFilter);
+                    // container.addContainerFilter(endFilter);
                 });
 
                 endDate.addValueChangeListener(event -> {
                     Date end = localDateToDate(event.getValue());
                     // remove filter
                     endFilter = new DateFilter(end, false);
-                    container.removeContainerFilters("timestamp");
-                    container.addContainerFilter(startFilter);
-                    container.addContainerFilter(endFilter);
+                    // container.removeContainerFilters("timestamp");
+                    // container.addContainerFilter(startFilter);
+                    // container.addContainerFilter(endFilter);
                 });
 
                 cell.setComponent(hl);
@@ -230,40 +215,40 @@ public class MyUI extends UI {
         layout.addComponent(grid);
         layout.setExpandRatio(grid, 1);
 
-        grid.addItemClickListener(new ItemClickEvent.ItemClickListener() {
+        grid.addItemClickListener(new ItemClickListener<Commit>() {
 
             @Override
-            public void itemClick(ItemClickEvent event) {
-                Object itemId = event.getItemId();
-                boolean isVisible = grid.isDetailsVisible(itemId);
-                grid.setDetailsVisible(itemId, !isVisible);
+            public void accept(ItemClick<Commit> event) {
+                Commit item = event.getItem();
+                boolean isVisible = grid.isDetailsVisible(item);
+                grid.setDetailsVisible(item, !isVisible);
             }
 
         });
         grid.setDetailsGenerator(detailsGenerator);
-        grid.addSelectionListener(new SelectionEvent.SelectionListener() {
-            @Override
-            public void select(SelectionEvent selectionEvent) {
-                for (Object id : selectionEvent.getAdded()) {
-                    grid.setDetailsVisible(id, true);
-                }
-                if (selectionEvent.getSelected().isEmpty()) {
-                    for (Object id : selectionEvent.getRemoved()) {
-                        grid.setDetailsVisible(id, false);
-                    }
-                }
-            }
-        });
-        layout.addShortcutListener(new ShortcutListener("Close details row",
-                KeyCode.ESCAPE, null) {
-            @Override
-            public void handleAction(Object sender, Object target) {
-                try {
-                    grid.setDetailsVisible(grid.getSelectedRow(), false);
-                } catch (Exception ignore) {
-                }
-            }
-        });
+        // grid.addSelectionListener(new SelectionListener() {
+        // @Override
+        // public void select(SelectionEvent selectionEvent) {
+        // for (Object id : selectionEvent.getAdded()) {
+        // grid.setDetailsVisible(id, true);
+        // }
+        // if (selectionEvent.getSelected().isEmpty()) {
+        // for (Object id : selectionEvent.getRemoved()) {
+        // grid.setDetailsVisible(id, false);
+        // }
+        // }
+        // }
+        // });
+        // layout.addShortcutListener(new ShortcutListener("Close details row",
+        // KeyCode.ESCAPE, null) {
+        // @Override
+        // public void handleAction(Object sender, Object target) {
+        // try {
+        // grid.setDetailsVisible(grid.getSelectedRow(), false);
+        // } catch (Exception ignore) {
+        // }
+        // }
+        // });
 
         setContent(layout);
 
@@ -282,13 +267,11 @@ public class MyUI extends UI {
         return ns;
     }
 
-    private final DetailsGenerator detailsGenerator = new DetailsGenerator() {
+    private final DetailsGenerator<Commit> detailsGenerator = new DetailsGenerator<Commit>() {
         @Override
-        public Component getDetails(RowReference rowReference) {
+        public Component apply(Commit commit) {
             FormLayout layout = new FormLayout();
             layout.setMargin(true);
-
-            Commit commit = (Commit) rowReference.getItemId();
 
             DateFormat df = DateFormat.getDateTimeInstance(DateFormat.MEDIUM,
                     DateFormat.MEDIUM, getLocale());
