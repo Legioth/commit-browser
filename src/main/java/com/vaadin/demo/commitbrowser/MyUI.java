@@ -1,6 +1,8 @@
 package com.vaadin.demo.commitbrowser;
 
 import java.text.DateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,6 +21,7 @@ import com.vaadin.shared.ui.ValueChangeMode;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.DateField;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
@@ -27,12 +30,9 @@ import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
-import com.vaadin.v7.data.Property.ValueChangeEvent;
-import com.vaadin.v7.data.Property.ValueChangeListener;
 import com.vaadin.v7.data.util.BeanItemContainer;
 import com.vaadin.v7.event.ItemClickEvent;
 import com.vaadin.v7.event.SelectionEvent;
-import com.vaadin.v7.ui.DateField;
 import com.vaadin.v7.ui.Grid;
 import com.vaadin.v7.ui.Grid.Column;
 import com.vaadin.v7.ui.Grid.DetailsGenerator;
@@ -200,30 +200,22 @@ public class MyUI extends UI {
 
                 hl.setComponentAlignment(dash, Alignment.MIDDLE_CENTER);
 
-                startDate.addValueChangeListener(new ValueChangeListener() {
-
-                    @Override
-                    public void valueChange(ValueChangeEvent event) {
-                        Date start = (Date) event.getProperty().getValue();
-                        // remove filter
-                        startFilter = new DateFilter(start, true);
-                        container.removeContainerFilters("timestamp");
-                        container.addContainerFilter(startFilter);
-                        container.addContainerFilter(endFilter);
-                    }
+                startDate.addValueChangeListener(event -> {
+                    Date start = localDateToDate(event.getValue());
+                    // remove filter
+                    startFilter = new DateFilter(start, true);
+                    container.removeContainerFilters("timestamp");
+                    container.addContainerFilter(startFilter);
+                    container.addContainerFilter(endFilter);
                 });
 
-                endDate.addValueChangeListener(new ValueChangeListener() {
-
-                    @Override
-                    public void valueChange(ValueChangeEvent event) {
-                        Date end = (Date) event.getProperty().getValue();
-                        // remove filter
-                        endFilter = new DateFilter(end, false);
-                        container.removeContainerFilters("timestamp");
-                        container.addContainerFilter(startFilter);
-                        container.addContainerFilter(endFilter);
-                    }
+                endDate.addValueChangeListener(event -> {
+                    Date end = localDateToDate(event.getValue());
+                    // remove filter
+                    endFilter = new DateFilter(end, false);
+                    container.removeContainerFilters("timestamp");
+                    container.addContainerFilter(startFilter);
+                    container.addContainerFilter(endFilter);
                 });
 
                 cell.setComponent(hl);
@@ -328,5 +320,10 @@ public class MyUI extends UI {
     };
     private DateFilter startFilter;
     private DateFilter endFilter;
+
+    private static Date localDateToDate(LocalDate localDate) {
+        return Date.from(
+                localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
 
 }
