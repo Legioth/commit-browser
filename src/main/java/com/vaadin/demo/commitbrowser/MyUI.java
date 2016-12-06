@@ -22,6 +22,7 @@ import com.vaadin.ui.Component;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.NativeSelect;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
@@ -38,7 +39,6 @@ import com.vaadin.v7.ui.Grid.DetailsGenerator;
 import com.vaadin.v7.ui.Grid.HeaderCell;
 import com.vaadin.v7.ui.Grid.HeaderRow;
 import com.vaadin.v7.ui.Grid.RowReference;
-import com.vaadin.v7.ui.NativeSelect;
 import com.vaadin.v7.ui.renderers.HtmlRenderer;
 import com.vaadin.v7.ui.renderers.ProgressBarRenderer;
 
@@ -279,23 +279,14 @@ public class MyUI extends UI {
 
     @SuppressWarnings("unchecked")
     private Component buildThemeSelector() {
-        final NativeSelect ns = new NativeSelect();
-        ns.setNullSelectionAllowed(false);
+        final NativeSelect<String> ns = new NativeSelect<>();
         ns.setId("themeSelect");
-        ns.addContainerProperty("caption", String.class, "");
-        ns.setItemCaptionPropertyId("caption");
-        for (final String identifier : themeVariants.keySet()) {
-            ns.addItem(identifier).getItemProperty("caption")
-                    .setValue(themeVariants.get(identifier));
-        }
+        ns.setItems(themeVariants.keySet());
+        ns.setItemCaptionGenerator(themeVariants::get);
 
         ns.setValue("tests-valo");
-        ns.addValueChangeListener(new ValueChangeListener() {
-            @Override
-            public void valueChange(final ValueChangeEvent event) {
-                setTheme((String) ns.getValue());
-            }
-        });
+        ns.addValueChangeListener(e -> setTheme(e.getValue()));
+
         return ns;
     }
 
