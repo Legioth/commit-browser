@@ -84,20 +84,20 @@ public class Commit {
         this.commitTime = commitTime;
     }
 
-	public String getFullName() {
-		return fullName;
-	}
+    public String getFullName() {
+        return fullName;
+    }
 
-	public void setFullName(String fullName) {
-		this.fullName = fullName;
-	}
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
 
-	public String getFullTopic() {
-		return fullTopic;
-	}
+    public String getFullTopic() {
+        return fullTopic;
+    }
 
-	public void setFullTopic(String fullTopic) {
-		this.fullTopic = fullTopic;
-	}
+    public void setFullTopic(String fullTopic) {
+        this.fullTopic = fullTopic;
+    }
 
 }

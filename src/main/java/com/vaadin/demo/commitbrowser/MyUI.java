@@ -4,13 +4,9 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Stack;
 
 import javax.inject.Inject;
 
-import com.vaadin.event.SelectionEvent;
-import com.vaadin.ui.renderers.HtmlRenderer;
-import elemental.json.JsonValue;
 import org.vaadin.viritin.LazyList;
 
 import com.vaadin.annotations.Theme;
@@ -19,6 +15,7 @@ import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.event.ItemClickEvent;
+import com.vaadin.event.SelectionEvent;
 import com.vaadin.event.ShortcutAction.KeyCode;
 import com.vaadin.event.ShortcutListener;
 import com.vaadin.server.VaadinRequest;
@@ -39,8 +36,11 @@ import com.vaadin.ui.NativeSelect;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.renderers.HtmlRenderer;
 import com.vaadin.ui.renderers.ProgressBarRenderer;
 import com.vaadin.ui.themes.ValoTheme;
+
+import elemental.json.JsonValue;
 
 /**
  *
@@ -58,7 +58,9 @@ public class MyUI extends UI {
     private static class MinimalSizeHtmlRenderer extends HtmlRenderer {
         @Override
         public JsonValue encode(String value) {
-            return super.encode("<div style=';pointer-events: none'><div style='width:10px;overflow-x:visible;pointer-events: none'>" +value + "</div></div>");
+            return super.encode(
+                    "<div style=';pointer-events: none'><div style='width:10px;overflow-x:visible;pointer-events: none'>"
+                            + value + "</div></div>");
         }
     }
 
@@ -76,14 +78,15 @@ public class MyUI extends UI {
     @Override
     protected void init(VaadinRequest vaadinRequest) {
 
-        boolean isEmbedded = "embedded".equals(vaadinRequest.getParameter("type"));
+        boolean isEmbedded = "embedded"
+                .equals(vaadinRequest.getParameter("type"));
         VerticalLayout layout = new VerticalLayout();
         layout.setId("rootLayout");
         layout.setMargin(!isEmbedded);
         layout.setSpacing(!isEmbedded);
 
         // Add theme selector
-        if(!isEmbedded) {
+        if (!isEmbedded) {
             Component themeSelector = buildThemeSelector();
             layout.addComponent(themeSelector);
             layout.setComponentAlignment(themeSelector, Alignment.TOP_RIGHT);
@@ -105,15 +108,15 @@ public class MyUI extends UI {
             System.out.println("c.getPropertyId() = " + c.getPropertyId());
         }
 
-        grid.setColumns("fullName","fullTopic","size","timestamp");
+        grid.setColumns("fullName", "fullTopic", "size", "timestamp");
 
         grid.getColumn("fullName").setExpandRatio(1);
         grid.getColumn("fullName").setRenderer(new MinimalSizeHtmlRenderer());
-//        grid.getColumn("fullName").setWidth(185);
+        // grid.getColumn("fullName").setWidth(185);
 
         grid.getColumn("fullTopic").setExpandRatio(2);
         grid.getColumn("fullTopic").setRenderer(new MinimalSizeHtmlRenderer());
-//        grid.getColumn("fullTopic").setWidth(372);
+        // grid.getColumn("fullTopic").setWidth(372);
         // Allow column hiding for all columns
         grid.getColumns().forEach(column -> column.setHidable(true));
 
@@ -136,7 +139,8 @@ public class MyUI extends UI {
                 .getContainerPropertyIds()) {
 
             // if we are not in one of the tree columns, move on
-            if (!(pid.equals("fullName") || pid.equals("fullTopic") || pid.equals("timestamp"))) {
+            if (!(pid.equals("fullName") || pid.equals("fullTopic")
+                    || pid.equals("timestamp"))) {
                 continue;
             }
 
@@ -154,19 +158,19 @@ public class MyUI extends UI {
                 // Update filter When the filter input is changed
                 filterField.addTextChangeListener(change -> {
                     // Can't modify filters so need to replace
-                        System.err.println("Got text change event");
-                        container.removeContainerFilters(pid);
+                    System.err.println("Got text change event");
+                    container.removeContainerFilters(pid);
 
-                        boolean ignoreCase = true;
-                        boolean onlyMatchPrefix = false;
+                    boolean ignoreCase = true;
+                    boolean onlyMatchPrefix = false;
 
-                        // (Re)create the filter if necessary
-                        if (!change.getText().isEmpty()) {
-                            System.err.println("Adding filter");
-                            container.addContainerFilter(pid, change.getText(),
-                                    ignoreCase, onlyMatchPrefix);
-                        }
-                    });
+                    // (Re)create the filter if necessary
+                    if (!change.getText().isEmpty()) {
+                        System.err.println("Adding filter");
+                        container.addContainerFilter(pid, change.getText(),
+                                ignoreCase, onlyMatchPrefix);
+                    }
+                });
                 cell.setComponent(filterField);
             }
 
@@ -229,8 +233,6 @@ public class MyUI extends UI {
 
         layout.addComponent(grid);
         layout.setExpandRatio(grid, 1);
-        
-        
 
         grid.addItemClickListener(new ItemClickEvent.ItemClickListener() {
 
@@ -249,7 +251,7 @@ public class MyUI extends UI {
                 for (Object id : selectionEvent.getAdded()) {
                     grid.setDetailsVisible(id, true);
                 }
-                if(selectionEvent.getSelected().isEmpty()) {
+                if (selectionEvent.getSelected().isEmpty()) {
                     for (Object id : selectionEvent.getRemoved()) {
                         grid.setDetailsVisible(id, false);
                     }
@@ -261,7 +263,7 @@ public class MyUI extends UI {
             @Override
             public void handleAction(Object sender, Object target) {
                 try {
-                      grid.setDetailsVisible(grid.getSelectedRow(), false);
+                    grid.setDetailsVisible(grid.getSelectedRow(), false);
                 } catch (Exception ignore) {
                 }
             }
@@ -321,9 +323,10 @@ public class MyUI extends UI {
             msg.setContentMode(ContentMode.HTML);
             msg.setStyleName("align-value-top");
             layout.addComponent(msg);
-            String text = commit.getFullMessage().replaceAll("(\\n\\r)|(\\n\\r)","\\n");
-            text = text.replaceAll("\\r","\\n");
-            text = text.replaceAll("\\n","<br/>");
+            String text = commit.getFullMessage()
+                    .replaceAll("(\\n\\r)|(\\n\\r)", "\\n");
+            text = text.replaceAll("\\r", "\\n");
+            text = text.replaceAll("\\n", "<br/>");
             msg.setValue(text);
 
             return layout;
