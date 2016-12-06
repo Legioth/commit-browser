@@ -3,7 +3,6 @@ package com.vaadin.demo.commitbrowser;
 import java.text.DateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 
@@ -19,15 +18,13 @@ import com.vaadin.shared.ui.ValueChangeMode;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Component;
-import com.vaadin.ui.DateField;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Grid;
+import com.vaadin.ui.Grid.Column;
 import com.vaadin.ui.Grid.DetailsGenerator;
-import com.vaadin.ui.Grid.HeaderCell;
 import com.vaadin.ui.Grid.HeaderRow;
 import com.vaadin.ui.Grid.ItemClick;
 import com.vaadin.ui.Grid.ItemClickListener;
-import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.NativeSelect;
 import com.vaadin.ui.TextField;
@@ -73,6 +70,10 @@ public class MyUI extends UI {
         themeVariants.put("tests-valo-metro", "Metro");
     }
 
+    private final TextField nameFilter = createFilterTextField();
+    private final TextField topicFilter = createFilterTextField();
+    private final DateFilterSelector dateFilter = new DateFilterSelector();
+
     @Override
     protected void init(VaadinRequest vaadinRequest) {
 
@@ -93,17 +94,44 @@ public class MyUI extends UI {
         ListDataProvider<Commit> dataProvider = DataProvider
                 .create(gitRepositoryService.findAll());
 
-        grid.setDataProvider(dataProvider);
+        grid.setDataProvider(dataProvider.setFilter(item -> {
+            if (!nameFilter.isEmpty() && !item.getFullName().toLowerCase()
+                    .contains(nameFilter.getValue().toLowerCase())) {
+                return false;
+            }
 
-        grid.addColumn(Commit::getFullName, new MinimalSizeHtmlRenderer())
+            if (!topicFilter.isEmpty() && !item.getFullTopic().toLowerCase()
+                    .contains(topicFilter.getValue().toLowerCase())) {
+                return false;
+            }
+
+            LocalDate startDate = dateFilter.getStartDate();
+            if (startDate != null
+                    && item.getTimestamp().before(localDateToDate(startDate))) {
+                return false;
+            }
+
+            LocalDate endDate = dateFilter.getEndDate();
+            if (endDate != null
+                    && item.getTimestamp().after(localDateToDate(endDate))) {
+                return false;
+            }
+
+            return true;
+        }));
+
+        Column<Commit, String> nameColumn = grid
+                .addColumn(Commit::getFullName, new MinimalSizeHtmlRenderer())
                 .setCaption("Full Name").setExpandRatio(1);
-        grid.addColumn(Commit::getFullTopic, new MinimalSizeHtmlRenderer())
+        Column<Commit, String> topicColumn = grid
+                .addColumn(Commit::getFullTopic, new MinimalSizeHtmlRenderer())
                 .setCaption("Full Topic").setExpandRatio(2);
 
         grid.addColumn(Commit::getSize, new ProgressBarRenderer())
                 .setCaption("Size");
 
-        grid.addColumn(commit -> String.valueOf(commit.getTimestamp()))
+        Column<Commit, String> timeColumn = grid
+                .addColumn(commit -> String.valueOf(commit.getTimestamp()))
                 .setCaption("Timestamp");
 
         // grid.getColumn("fullName").setWidth(185);
@@ -119,95 +147,17 @@ public class MyUI extends UI {
         HeaderRow filterRow = grid.appendHeaderRow();
 
         // Set up a filter for author, topic, date and email
+        nameFilter.addValueChangeListener(
+                event -> grid.getDataProvider().refreshAll());
+        filterRow.getCell(nameColumn).setComponent(nameFilter);
 
-        // set up dateFilters
-        startFilter = new DateFilter(null, true);
-        endFilter = new DateFilter(null, false);
+        topicFilter.addValueChangeListener(
+                event -> grid.getDataProvider().refreshAll());
+        filterRow.getCell(topicColumn).setComponent(topicFilter);
 
-        for (String pid : Collections.<String> emptyList()) {
-
-            // if we are not in one of the tree columns, move on
-            if (!(pid.equals("fullName") || pid.equals("fullTopic")
-                    || pid.equals("timestamp"))) {
-                continue;
-            }
-
-            HeaderCell cell = filterRow.getCell(pid);
-
-            // if we are dealing with a text field, add a simple string filter.
-
-            if (pid.equals("fullName") || pid.equals("fullTopic")) {
-
-                // Have an input field to use for filter
-                TextField filterField = new TextField();
-                filterField.setWidth(100, Unit.PERCENTAGE);
-                filterField.addStyleName(ValoTheme.TEXTFIELD_SMALL);
-                filterField.setValueChangeMode(ValueChangeMode.LAZY);
-
-                // Update filter When the filter input is changed
-                filterField.addValueChangeListener(change -> {
-                    // Can't modify filters so need to replace
-                    System.err.println("Got text change event");
-                    // container.removeContainerFilters(pid);
-
-                    boolean ignoreCase = true;
-                    boolean onlyMatchPrefix = false;
-
-                    // (Re)create the filter if necessary
-                    if (!change.getValue().isEmpty()) {
-                        System.err.println("Adding filter");
-                        // container.addContainerFilter(pid, change.getValue(),
-                        // ignoreCase, onlyMatchPrefix);
-                    }
-                });
-                cell.setComponent(filterField);
-            }
-
-            // if we are dealing with a date field, add a date range filter.
-            if (pid.equals("timestamp")) {
-                // we need a start date and an end date
-                HorizontalLayout hl = new HorizontalLayout();
-                hl.setSpacing(true);
-
-                DateField startDate = new DateField();
-                DateField endDate = new DateField();
-                startDate.addStyleName(ValoTheme.DATEFIELD_SMALL);
-                endDate.addStyleName(ValoTheme.DATEFIELD_SMALL);
-                startDate.setWidth(120, Unit.PIXELS);
-                endDate.setWidth(120, Unit.PIXELS);
-
-                Label dash = new Label("-");
-                dash.setSizeUndefined();
-
-                hl.addComponent(startDate);
-                hl.addComponent(dash);
-                hl.addComponent(endDate);
-
-                hl.setComponentAlignment(dash, Alignment.MIDDLE_CENTER);
-
-                startDate.addValueChangeListener(event -> {
-                    Date start = localDateToDate(event.getValue());
-                    // remove filter
-                    startFilter = new DateFilter(start, true);
-                    // container.removeContainerFilters("timestamp");
-                    // container.addContainerFilter(startFilter);
-                    // container.addContainerFilter(endFilter);
-                });
-
-                endDate.addValueChangeListener(event -> {
-                    Date end = localDateToDate(event.getValue());
-                    // remove filter
-                    endFilter = new DateFilter(end, false);
-                    // container.removeContainerFilters("timestamp");
-                    // container.addContainerFilter(startFilter);
-                    // container.addContainerFilter(endFilter);
-                });
-
-                cell.setComponent(hl);
-
-            }
-
-        }
+        dateFilter.addValueChangeListener(
+                event -> grid.getDataProvider().refreshAll());
+        filterRow.getCell(timeColumn).setComponent(dateFilter);
 
         layout.setSizeFull();
         grid.setSizeFull();
@@ -252,6 +202,14 @@ public class MyUI extends UI {
 
         setContent(layout);
 
+    }
+
+    private TextField createFilterTextField() {
+        TextField filterField = new TextField();
+        filterField.setWidth(100, Unit.PERCENTAGE);
+        filterField.addStyleName(ValoTheme.TEXTFIELD_SMALL);
+        filterField.setValueChangeMode(ValueChangeMode.LAZY);
+        return filterField;
     }
 
     @SuppressWarnings("unchecked")
@@ -301,8 +259,6 @@ public class MyUI extends UI {
             return layout;
         }
     };
-    private DateFilter startFilter;
-    private DateFilter endFilter;
 
     private static Date localDateToDate(LocalDate localDate) {
         return Date.from(
