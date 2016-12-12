@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 import javax.inject.Inject;
 
 import com.vaadin.annotations.Theme;
-import com.vaadin.annotations.Widgetset;
 import com.vaadin.cdi.CDIUI;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.data.DataProvider;
@@ -41,7 +40,6 @@ import elemental.json.JsonValue;
  */
 @Theme("tests-valo")
 @CDIUI("")
-@Widgetset("com.vaadin.v7.Vaadin7WidgetSet")
 public class MyUI extends UI {
 
     @Inject

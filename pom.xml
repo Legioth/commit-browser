@@ -55,7 +55,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.vaadin</groupId>
-			<artifactId>vaadin-compatibility-server</artifactId>
+			<artifactId>vaadin-server</artifactId>
 			<version>${vaadin.version}</version>
 		</dependency>
 		<dependency>
@@ -69,7 +69,7 @@
 			no need for an explicit dependency. -->
 		<dependency>
 			<groupId>com.vaadin</groupId>
-			<artifactId>vaadin-compatibility-client-compiled</artifactId>
+			<artifactId>vaadin-client-compiled</artifactId>
 			<version>${vaadin.version}</version>
 		</dependency>
 		<dependency>
